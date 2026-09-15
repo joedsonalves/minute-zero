@@ -15,6 +15,13 @@ Roughly **1,400 tokens are deployed every day** on a single launchpad family, an
 - **What it uses:** [Mobula](https://mobula.io) Pulse (`/api/2/pulse`), Token Details (`/api/2/token/details`) and OHLCV history (`/api/2/token/ohlcv-history`).
 - **Who it's for:** anyone studying launch dynamics — researchers, launchpad builders, traders who want evidence instead of vibes.
 
+## Demo
+
+[![MinuteZero screenshot](./assets/screenshot.png)](https://minute-zero-indol.vercel.app)
+
+*Live at [minute-zero-indol.vercel.app](https://minute-zero-indol.vercel.app). Every row is a token born
+minutes ago; the columns are its own first minutes. Click one to get the full portrait.*
+
 ## About
 
 Every launch analytics tool shows you holders, bundlers and liquidity. Those are the numbers that were **already there** when the token was deployed, and they turn out to be nearly identical between the launches that go somewhere and the ones that die: in a 1,396-launch sample, liquidity was $4,298 for the winners and $4,256 for the rest, and bundler concentration was the norm on both sides, not the exception.
