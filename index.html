@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MinuteZero — the first five minutes of a token, measured</title>
+<meta name="description" content="MinuteZero measures the first minutes of a newly launched token — volume, silent minutes and price move, counted from the contract's birth — using the Mobula API.">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0b0e13; --panel: #121722; --border: #1e2636; --text: #e6edf6;
+    --dim: #8494ab; --cyan: #4bf3ff; --green: #33ff9c; --amber: #ffc23c; --red: #ff5c7a;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.55 var(--mono); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 16px 64px; }
+  h1 { font-size: 20px; margin: 0 0 6px; letter-spacing: 1px; }
+  h1 span { color: var(--cyan); }
+  .sub { color: var(--dim); margin: 0 0 22px; font-size: 13px; max-width: 70ch; }
+  .painel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 18px; }
+  .painel h2 { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--cyan); margin: 0 0 10px; }
+  .linha { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  select, input, button {
+    font: inherit; background: #0d1118; color: var(--text);
+    border: 1px solid var(--border); border-radius: 5px; padding: 7px 10px;
+  }
+  input { flex: 1 1 320px; min-width: 0; }
+  button { cursor: pointer; border-color: #2b3a4f; }
+  button:hover { border-color: var(--cyan); color: var(--cyan); }
+  button[disabled] { opacity: .5; cursor: default; }
+  .tabela-rolavel { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+  th, td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--dim); font-weight: 400; font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: #161d2b; }
+  .vivo { color: var(--green); }
+  .morto { color: var(--red); }
+  .morno { color: var(--amber); }
+  .dim { color: var(--dim); }
+  .aviso { color: var(--amber); font-size: 12px; }
+  .barras { display: flex; gap: 2px; align-items: flex-end; height: 40px; margin-top: 8px; }
+  .barras i { flex: 1; background: var(--cyan); min-height: 2px; border-radius: 1px 1px 0 0; display: block; opacity: .85; }
+  .barras i.zero { background: #2b3a4f; }
+  .cartoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .cartao { background: #0d1118; border: 1px solid var(--border); border-radius: 6px; padding: 10px; }
+  .cartao b { display: block; font-size: 19px; margin-bottom: 2px; }
+  .cartao span { color: var(--dim); font-size: 10.5px; text-transform: uppercase; letter-spacing: 1px; }
+  footer { color: var(--dim); font-size: 11.5px; margin-top: 28px; line-height: 1.8; }
+  a { color: var(--cyan); }
+  code { background: #0d1118; padding: 1px 5px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Minute<span>Zero</span></h1>
+  <p class="sub">
+    What a token's <b>first five minutes</b> actually looked like — volume, how many of those minutes had
+    <b>no trade at all</b>, and how far the price moved — counted from the contract's birth, not from when
+    you happened to look. Powered by the <a href="https://mobula.io" target="_blank" rel="noopener">Mobula API</a>.
+  </p>
+
+  <div class="painel">
+    <h2>Inspect a token</h2>
+    <div class="linha">
+      <select id="chain">
+        <option value="solana">solana</option>
+        <option value="bnb">bnb</option>
+        <option value="base">base</option>
+        <option value="ethereum">ethereum</option>
+        <option value="polygon">polygon</option>
+        <option value="arbitrum">arbitrum</option>
+      </select>
+      <input id="addr" placeholder="token contract address" spellcheck="false">
+      <button id="ver">Measure</button>
+    </div>
+    <div id="retrato" style="margin-top:14px"></div>
+  </div>
+
+  <div class="painel">
+    <h2>Born in the last minutes</h2>
+    <div class="linha">
+      <select id="feedChain">
+        <option value="solana">solana</option>
+        <option value="bnb">bnb</option>
+        <option value="base">base</option>
+        <option value="ethereum">ethereum</option>
+      </select>
+      <select id="secao">
+        <option value="new">new</option>
+        <option value="bonding">bonding</option>
+        <option value="bonded">bonded</option>
+      </select>
+      <button id="recarregar">Refresh</button>
+      <span class="dim" id="orcamento"></span>
+    </div>
+    <p class="sub" style="margin:10px 0 0">
+      Click any row to measure it. <b>Buyers 1m/5m are windows relative to now</b>, so they only describe the
+      token's own first minutes while it is that young — the age column is there for exactly that reason.
+    </p>
+    <div class="tabela-rolavel"><div id="feed" class="dim" style="padding:10px 0">loading…</div></div>
+  </div>
+
+  <footer>
+    Open source · <a href="https://github.com/joedsonalves/minute-zero">GitHub</a> ·
+    Built for the <a href="https://mobula.io" target="_blank" rel="noopener">Mobula</a> bounty program ·
+    Public demo runs on a capped free key — self-host with your own for real work.
+  </footer>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const usd = (v) => v === null || v === undefined ? '—'
+  : v >= 1000 ? '$' + Math.round(v).toLocaleString('en-US')
+  : '$' + Number(v).toFixed(2);
+const esc = (s) => String(s ?? '').replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+
+function classeDeVida(volume) {
+  if (volume === null || volume === undefined) return 'dim';
+  if (volume >= 1000) return 'vivo';
+  if (volume >= 50) return 'morno';
+  return 'morto';
+}
+
+async function medir(chain, address) {
+  $('retrato').innerHTML = '<span class="dim">measuring…</span>';
+  const r = await fetch(`/api/first-minutes?chain=${chain}&address=${encodeURIComponent(address)}`);
+  const d = await r.json();
+  if (d.erro) {
+    $('retrato').innerHTML = `<span class="aviso">${esc(d.erro)} — ${esc(d.detalhe || '')}</span>`;
+    return;
+  }
+  const j = d.retrato.janelas || {};
+  if (d.retrato.semCandle) {
+    $('retrato').innerHTML = `<span class="aviso">No candle at all in this window. That is
+      "nobody traded it" OR "Mobula has no bar for those minutes" — the two are not the same thing,
+      and this tool will not pretend to know which.</span>`;
+    return;
+  }
+  const cartao = (rot, valor, cls = '') => `<div class="cartao"><b class="${cls}">${valor}</b><span>${rot}</span></div>`;
+  const velas = d.retrato.velas || [];
+  const maxVol = Math.max(...velas.map(v => v.volume), 1);
+
+  $('retrato').innerHTML = `
+    <div style="margin-bottom:10px">
+      <b>${esc(d.token.simbolo || '?')}</b> <span class="dim">${esc(d.token.nome || '')}</span>
+      <span class="dim"> · born ${esc(d.token.nascimento)} · ${d.token.idadeMinutos.toLocaleString('en-US')} min old
+      ${d.token.launchpad ? ' · ' + esc(d.token.launchpad) : ''}</span>
+    </div>
+    <div class="cartoes">
+      ${cartao('volume · 1st min', usd(j[1]?.volumeUsd), classeDeVida(j[1]?.volumeUsd))}
+      ${cartao('volume · 5 min', usd(j[5]?.volumeUsd), classeDeVida(j[5]?.volumeUsd))}
+      ${cartao('silent minutes of 5', (j[5]?.minutosMudos ?? '—') + '/5', j[5]?.minutosMudos >= 4 ? 'morto' : 'vivo')}
+      ${cartao('peak × in 5 min', j[5]?.multiplo ? j[5].multiplo.toFixed(2) + '×' : '—')}
+      ${cartao('peak × in 15 min', j[15]?.multiplo ? j[15].multiplo.toFixed(2) + '×' : '—')}
+      ${cartao('holders now', d.token.holders?.toLocaleString('en-US') ?? '—')}
+    </div>
+    <div class="barras" title="volume per minute since birth">
+      ${velas.map(v => `<i class="${v.volume > 0 ? '' : 'zero'}" style="height:${Math.max(3, (v.volume / maxVol) * 100)}%" title="min ${v.minuto}: ${usd(v.volume)}"></i>`).join('')}
+    </div>
+    <p class="sub" style="margin:8px 0 0">
+      Bars are volume per minute from birth. A gap means Mobula returned no bar for that minute —
+      which is what a dead launch looks like.
+    </p>`;
+}
+
+async function carregarFeed() {
+  const chain = $('feedChain').value, secao = $('secao').value;
+  $('feed').innerHTML = '<span class="dim">loading…</span>';
+  const r = await fetch(`/api/pulse?chain=${chain}&secao=${secao}`);
+  const d = await r.json();
+  if (d.erro) { $('feed').innerHTML = `<span class="aviso">${esc(d.erro)} — ${esc(d.detalhe || '')}</span>`; return; }
+  if (d.orcamento) $('orcamento').textContent = `${d.orcamento.restam} of ${d.orcamento.teto} daily credits left`;
+
+  $('feed').innerHTML = `<table>
+    <tr><th>token</th><th>age</th><th>buyers 1m</th><th>buyers 5m</th><th>vol 5m</th><th>liquidity</th><th>bundlers</th></tr>
+    ${d.tokens.slice(0, 25).map(t => `<tr data-a="${esc(t.endereco)}">
+      <td>${esc(t.simbolo || t.endereco.slice(0, 10))} <span class="dim">${esc((t.nome || '').slice(0, 22))}</span></td>
+      <td class="dim">${t.idadeMinutos ?? '—'}m</td>
+      <td class="${t.compradores1min > 0 ? 'vivo' : 'dim'}">${t.compradores1min ?? '—'}</td>
+      <td class="${t.compradores5min > 2 ? 'vivo' : 'dim'}">${t.compradores5min ?? '—'}</td>
+      <td class="${classeDeVida(t.volume5min)}">${usd(t.volume5min)}</td>
+      <td class="dim">${usd(t.liquidezUsd)}</td>
+      <td class="dim">${t.bundlersPct !== null ? Math.round(t.bundlersPct) + '%' : '—'}</td>
+    </tr>`).join('')}
+  </table>`;
+
+  $('feed').querySelectorAll('tr[data-a]').forEach(tr => tr.onclick = () => {
+    $('chain').value = chain; $('addr').value = tr.dataset.a;
+    medir(chain, tr.dataset.a);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
+$('ver').onclick = () => { if ($('addr').value.trim()) medir($('chain').value, $('addr').value.trim()); };
+$('addr').onkeydown = (e) => { if (e.key === 'Enter') $('ver').click(); };
+$('recarregar').onclick = carregarFeed;
+$('feedChain').onchange = carregarFeed;
+$('secao').onchange = carregarFeed;
+carregarFeed();
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "minute-zero",
+  "version": "1.0.0",
+  "description": "Measures the first minutes of a newly launched token — volume, silent minutes and price move, counted from the contract's birth. Built with the Mobula API.",
+  "type": "module",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/joedsonalves/minute-zero" },
+  "keywords": ["mobula", "memecoin", "token-launch", "ohlcv", "onchain-data", "solana", "defi", "crypto-api"],
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  }
+}
