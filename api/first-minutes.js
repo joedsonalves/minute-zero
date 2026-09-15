@@ -41,7 +41,7 @@ export default async function handler(req, res) {
       // "não sei quando nasceu" é diferente de "nasceu e não negociou"
       return responder(res, 422, {
         erro: "sem_nascimento",
-        detalhe: "a Mobula não tem a data de criação deste contrato, então não dá para contar 'desde o minuto zero'.",
+        detalhe: "Mobula has no creation date for this contract, so there is no way to count from minute zero.",
       });
     }
 

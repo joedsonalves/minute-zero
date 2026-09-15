@@ -75,8 +75,8 @@ export async function mobulaGet(path, params, { ttlSegundos = 60 } = {}) {
   const conta = orcamento();
   if (conta.restam < custo) {
     throw new SemCota(
-      `teto diário de ${TETO_DIARIO} créditos atingido (${conta.gastos} usados). ` +
-        `Rode sua própria instância com sua chave: https://github.com/joedsonalves/minute-zero`
+      `daily cap of ${TETO_DIARIO} credits reached (${conta.gastos} spent). ` +
+        `Run your own instance with your key: https://github.com/joedsonalves/minute-zero`
     );
   }
 
@@ -97,11 +97,11 @@ export async function mobulaGet(path, params, { ttlSegundos = 60 } = {}) {
 
   if (resposta.status === 429 || resposta.status === 503) {
     throw new LimiteDeTaxa(
-      "a Mobula recusou por limite de taxa depois de 3 tentativas (plano gratuito: 1 req/s)"
+      "Mobula refused with a rate limit after 3 attempts (free tier: 1 req/s)"
     );
   }
   if (!resposta.ok) {
-    throw new Error(`Mobula respondeu ${resposta.status} em ${path}`);
+    throw new Error(`Mobula answered ${resposta.status} on ${path}`);
   }
 
   const dados = await resposta.json();
