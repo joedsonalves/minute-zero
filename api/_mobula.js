@@ -141,14 +141,23 @@ export async function candlesDeUmMinuto(chainId, address, desdeMs, minutos) {
 export function retratoDosPrimeirosMinutos(velas, nascimentoMs, janelas = [1, 3, 5, 15]) {
   if (!velas.length) return { semCandle: true, velas: [] };
 
+  // A vela da Mobula é um BALDE alinhado ao minuto: um token que nasce no
+  // segundo 38 tem a vela do próprio nascimento começando 38s ANTES dele.
+  // Ancorar no instante exato jogaria essa vela para o índice -1 e faria
+  // "minutos negociados" passar do tamanho da janela (6 de 5). O minuto zero é
+  // o balde em que o contrato nasceu, não o segundo em que nasceu.
+  const inicio = Math.floor(nascimentoMs / 60_000) * 60_000;
   const base = velas[0].close;
   const retrato = { nVelas: velas.length, precoInicialUsd: base, janelas: {} };
 
   for (const janela of janelas) {
-    const limite = nascimentoMs + janela * 60_000;
+    const limite = inicio + janela * 60_000;
     const pedaco = velas.filter((v) => v.time < limite);
     const minutosNegociados = new Set(
-      pedaco.filter((v) => (v.volume || 0) > 0).map((v) => Math.floor((v.time - nascimentoMs) / 60_000))
+      pedaco
+        .filter((v) => (v.volume || 0) > 0)
+        .map((v) => Math.floor((v.time - inicio) / 60_000))
+        .filter((i) => i >= 0 && i < janela)
     );
     const fechamentos = pedaco.map((v) => v.close).filter(Boolean);
     retrato.janelas[janela] = {
@@ -162,7 +171,7 @@ export function retratoDosPrimeirosMinutos(velas, nascimentoMs, janelas = [1, 3,
   // as velas cruas vão junto: sem elas, qualquer conserto de conta obrigaria
   // a gastar crédito de novo só para recalcular
   retrato.velas = velas.slice(0, 20).map((v) => ({
-    minuto: Math.floor((v.time - nascimentoMs) / 60_000),
+    minuto: Math.floor((v.time - inicio) / 60_000),
     close: v.close,
     volume: v.volume || 0,
   }));
