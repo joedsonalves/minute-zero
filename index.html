@@ -44,6 +44,17 @@
   .barras { display: flex; gap: 2px; align-items: flex-end; height: 40px; margin-top: 8px; }
   .barras i { flex: 1; background: var(--cyan); min-height: 2px; border-radius: 1px 1px 0 0; display: block; opacity: .85; }
   .barras i.zero { background: #2b3a4f; }
+  #aviso-cota {
+    border: 1px solid var(--amber); border-left-width: 3px; border-radius: 6px;
+    background: rgba(255,194,60,.07); color: var(--amber);
+    padding: 11px 13px; margin-bottom: 18px; font-size: 12.5px; line-height: 1.6;
+  }
+  #aviso-cota b { color: var(--amber); }
+  #aviso-cota a { color: var(--amber); }
+  .selo-exemplo {
+    display: inline-block; font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+    border: 1px solid var(--amber); color: var(--amber); border-radius: 3px; padding: 1px 6px; margin-left: 6px;
+  }
   .cartoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
   .cartao { background: #0d1118; border: 1px solid var(--border); border-radius: 6px; padding: 10px; }
   .cartao b { display: block; font-size: 19px; margin-bottom: 2px; }
@@ -55,6 +66,15 @@
 </head>
 <body>
 <div class="wrap">
+  <div id="aviso-cota" hidden>
+    <b>The public demo is out of Mobula credits right now.</b>
+    <span id="aviso-detalhe"></span>
+    This is the free tier answering honestly instead of returning an empty result — which is the whole
+    point of this project. The code is fine: clone it with your own key
+    (<a href="https://admin.mobula.io">10,000 free credits/month</a>), or look at the
+    <a href="#" onclick="mostrarExemplo();return false;">saved example measurement</a> below.
+  </div>
+
   <h1>Minute<span>Zero</span></h1>
   <p class="sub">
     What a token's <b>first five minutes</b> actually looked like — volume, how many of those minutes had
@@ -75,6 +95,7 @@
       </select>
       <input id="addr" placeholder="token contract address" spellcheck="false">
       <button id="ver">Measure</button>
+      <button id="exemplo" onclick="mostrarExemplo()">See an example</button>
     </div>
     <div id="retrato" style="margin-top:14px"></div>
   </div>
@@ -117,6 +138,55 @@ const usd = (v) => v === null || v === undefined ? '—'
   : '$' + Number(v).toFixed(2);
 const esc = (s) => String(s ?? '').replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
 
+// Medição real do FLYBRAIN (Robinhood Chain), capturada em 2026-09-10 a partir
+// das velas de 1 minuto desde o nascimento do contrato. Fica embutida para que
+// a página mostre o que a ferramenta produz mesmo quando a cota acabou - e vem
+// rotulada como exemplo salvo, nunca como leitura ao vivo.
+const EXEMPLO = {
+  simbolo: 'FLYBRAIN', nome: 'Fly Brain', nascimento: '2026-09-10T18:30:23Z', launchpad: 'Pons V2',
+  volumes: [2910, 5618, 8400, 12956, 6912, 13628, 14877, 10581, 7558, 2708, 19450, 10380, 3699, 23550, 10870],
+  janelas: {
+    1:  { volumeUsd: 2910,   minutosNegociados: 1,  minutosMudos: 0, multiplo: 1.00 },
+    3:  { volumeUsd: 16928,  minutosNegociados: 3,  minutosMudos: 0, multiplo: 2.63 },
+    5:  { volumeUsd: 36796,  minutosNegociados: 5,  minutosMudos: 0, multiplo: 3.82 },
+    15: { volumeUsd: 154097, minutosNegociados: 15, minutosMudos: 0, multiplo: 7.90 },
+  },
+};
+
+function mostrarExemplo() {
+  const j = EXEMPLO.janelas;
+  const maxVol = Math.max(...EXEMPLO.volumes);
+  const cartao = (rot, valor, cls = '') => `<div class="cartao"><b class="${cls}">${valor}</b><span>${rot}</span></div>`;
+  $('retrato').innerHTML = `
+    <div style="margin-bottom:10px">
+      <b>${EXEMPLO.simbolo}</b> <span class="dim">${EXEMPLO.nome}</span>
+      <span class="selo-exemplo">saved example</span>
+      <span class="dim"> · born ${EXEMPLO.nascimento} · ${EXEMPLO.launchpad} · measured 2026-09-10</span>
+    </div>
+    <div class="cartoes">
+      ${cartao('volume · 1st min', usd(j[1].volumeUsd), 'vivo')}
+      ${cartao('volume · 5 min', usd(j[5].volumeUsd), 'vivo')}
+      ${cartao('silent minutes of 5', j[5].minutosMudos + '/5', 'vivo')}
+      ${cartao('peak × in 5 min', j[5].multiplo.toFixed(2) + '×')}
+      ${cartao('peak × in 15 min', j[15].multiplo.toFixed(2) + '×')}
+      ${cartao('volume · 15 min', usd(j[15].volumeUsd), 'vivo')}
+    </div>
+    <div class="barras" title="volume per minute since birth">
+      ${EXEMPLO.volumes.map((v, i) => `<i style="height:${Math.max(3, (v / maxVol) * 100)}%" title="min ${i}: ${usd(v)}"></i>`).join('')}
+    </div>
+    <p class="sub" style="margin:8px 0 0">
+      This is what a launch that goes somewhere looks like: <b>$2,910 traded in its first minute</b>,
+      no silent minute, 3.8× by minute five. It eventually did +380,000% — and none of the usual
+      metrics flagged it (bundlers held 39% of supply, which is simply the norm on that launchpad).
+      A dead launch measured with the same tool shows <b>$3 in five minutes</b> and four silent minutes.
+    </p>`;
+}
+
+function avisarCota(detalhe) {
+  document.getElementById('aviso-detalhe').textContent = detalhe ? `(${detalhe}) ` : '';
+  document.getElementById('aviso-cota').hidden = false;
+}
+
 function classeDeVida(volume) {
   if (volume === null || volume === undefined) return 'dim';
   if (volume >= 1000) return 'vivo';
@@ -129,6 +199,11 @@ async function medir(chain, address) {
   const r = await fetch(`/api/first-minutes?chain=${chain}&address=${encodeURIComponent(address)}`);
   const d = await r.json();
   if (d.erro) {
+    if (d.erro === 'limite_de_taxa' || d.erro === 'sem_cota') {
+      avisarCota(d.detalhe);
+      mostrarExemplo();
+      return;
+    }
     $('retrato').innerHTML = `<span class="aviso">${esc(d.erro)} — ${esc(d.detalhe || '')}</span>`;
     return;
   }
@@ -171,7 +246,11 @@ async function carregarFeed() {
   $('feed').innerHTML = '<span class="dim">loading…</span>';
   const r = await fetch(`/api/pulse?chain=${chain}&secao=${secao}`);
   const d = await r.json();
-  if (d.erro) { $('feed').innerHTML = `<span class="aviso">${esc(d.erro)} — ${esc(d.detalhe || '')}</span>`; return; }
+  if (d.erro) {
+    if (d.erro === 'limite_de_taxa' || d.erro === 'sem_cota') avisarCota(d.detalhe);
+    $('feed').innerHTML = `<span class="aviso">${esc(d.erro)} — ${esc(d.detalhe || '')}</span>`;
+    return;
+  }
   if (d.orcamento) $('orcamento').textContent = `${d.orcamento.restam} of ${d.orcamento.teto} daily credits left`;
 
   $('feed').innerHTML = `<table>

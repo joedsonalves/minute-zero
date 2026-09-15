@@ -135,6 +135,13 @@ Because bundler concentration doesn't separate the groups — it's the norm on t
 ### What's the difference between "no candle" and "zero volume"?
 Everything. Zero volume means the API looked and nobody traded. No candle means there's no bar to look at — which can also mean the data isn't there. This tool reports them as different answers, on purpose, because collapsing them is how a study ends up confidently wrong.
 
+### The demo says "out of Mobula credits" — is it broken?
+No. The hosted demo runs on a free-tier key with a hard daily cap, and when the quota is gone it
+*says so* instead of returning an empty result — which is the behaviour this whole project argues
+for. The live feed still loads; the per-token measurement falls back to a **saved example**
+(FLYBRAIN, measured 2026-09-10) so you can see exactly what the output looks like. Clone it with
+your own key for live measurements.
+
 ### Does the public demo use my credits?
 No — the hosted demo runs on its own key with a daily cap, and will answer `sem_cota` when it's reached. For real work, clone it and set your own `MOBULA_API_KEY`.
 
